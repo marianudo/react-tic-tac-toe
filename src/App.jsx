@@ -4,20 +4,27 @@ import Player from "./components/Player";
 
 import { useState } from 'react';
 
+function deriveActivePlayer(gameTurns) {
+  let activePlayer = 'X';
+  if (gameTurns.length > 0) {
+    // We pick the last turn, and set the active player to the other one
+    const lastTurn = gameTurns[0];
+    const lastPlayer = lastTurn.player;
+    activePlayer = lastPlayer === 'X' ? 'O' : 'X';
+  }
+  return activePlayer;
+}
+
 function App() {
-  const [activePlayer, setActivePlayer] = useState('X');
   const [gameTurns, setGameTurns] = useState([])
 
-  function handleSelectSquare(rowIndex, colIndex) {
-    setActivePlayer((curActivePlayer) =>  curActivePlayer === 'X' ? 'O' : 'X');
+  // Derive the activePlayer state from the gameTurns one
+  const activePlayer = deriveActivePlayer(gameTurns);
 
+  function handleSelectSquare(rowIndex, colIndex) {
     setGameTurns(prevTurns => {
       // Derived from another state, to prevent using the state irself inside this other state
-      let currentPlayer = 'X';
-
-      if (prevTurns.length > 0 && prevTurns[0].player === 'X') {
-        currentPlayer = 'O';
-      }
+      const currentPlayer = deriveActivePlayer(prevTurns);
 
       const updatedTurns = [
         { square: {row: rowIndex, col: colIndex}, player: currentPlayer }, 
