@@ -12,7 +12,9 @@ export default function Player({ initialName, symbol, isActive, onNameChange }) 
     function handleNameChange(event) {
         const newName = event.target.value
         setPlayerName(newName);
-        onNameChange(symbol, newName);
+        if(isEditing) {
+            onNameChange(symbol, newName);
+        }
     }
 
     return (
