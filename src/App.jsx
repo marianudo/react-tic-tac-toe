@@ -7,11 +7,16 @@ import { useState } from 'react';
 import { WINNING_COMBINATIONS } from "./winning-combinations.js";
 import GameOver from "./components/GameOver.jsx";
 
-const initialGameBoard = [
+const INITIAL_GAME_BOARD = [
   [null, null, null],
   [null, null, null],
   [null, null, null]
 ];
+
+const PLAYERS = {
+  'X': 'Player 1',
+  'O': 'Player 2'
+};
 
 function deriveActivePlayer(gameTurns) {
   let activePlayer = 'X';
@@ -24,29 +29,7 @@ function deriveActivePlayer(gameTurns) {
   return activePlayer;
 }
 
-function App() {
-  const [gameTurns, setGameTurns] = useState([]);
-  const [playerNames, setPlayerNames] = useState({
-    'X': 'Player 1',
-    'O': 'Player 2'
-  });
-
-  // Derive the activePlayer state from the gameTurns one
-  const activePlayer = deriveActivePlayer(gameTurns);
-
-  // Derive if there's a winner from the gameTurns state
-  // This is doing event sourcing for each click
-  // NOTE: to prevent a bug that shows up when clicking the restart button on the GameOver overlay
-  // we create a deep copy of the initialGameBoard value
-  let gameBoard = [...initialGameBoard].map(array => [...array]);
-
-  for (const turn of gameTurns) {
-      const { square, player } = turn;
-      const { row, col } = square;
-
-      gameBoard[row][col] = player;
-  }
-
+function deriveWinner(gameBoard, playerNames) {
   let winner;
 
   for (const combination of WINNING_COMBINATIONS) {
@@ -66,8 +49,44 @@ function App() {
     }
   }
 
+  return winner;
+}
+
+function deriveGameBoard(gameTurns) {
+  // Derive if there's a winner from the gameTurns state
+  // This is doing event sourcing for each click
+  // NOTE: to prevent a bug that shows up when clicking the restart button on the GameOver overlay
+  // we create a deep copy of the initialGameBoard value
+  let gameBoard = [...INITIAL_GAME_BOARD].map(array => [...array]);
+
+  for (const turn of gameTurns) {
+      const { square, player } = turn;
+      const { row, col } = square;
+
+      gameBoard[row][col] = player;
+  }
+
+  return gameBoard;
+}
+
+function App() {
+  // OUR STATE
+  const [gameTurns, setGameTurns] = useState([]);
+  const [playerNames, setPlayerNames] = useState({
+    'X': 'Player 1',
+    'O': 'Player 2'
+  });
+
+  // Derive the activePlayer state from the gameTurns one
+  const activePlayer = deriveActivePlayer(gameTurns);
+
+  const gameBoard = deriveGameBoard(gameTurns);
+
+  const winner = deriveWinner(gameBoard, playerNames);
+
   const hasDraw = gameTurns.length === 9 && !winner;
 
+  // Handle click on a board cell
   function handleSelectSquare(rowIndex, colIndex) {
     setGameTurns(prevTurns => {
       // Derived from another state, to prevent using the state irself inside this other state
@@ -82,10 +101,12 @@ function App() {
     });
   }
 
+  // Handle game restart after winner or draw
   function handleRestart() {
     setGameTurns([]);
   }
 
+  // Handle player name editing
   function handlePlayerNameChange(symbol, newName) {
     setPlayerNames(oldPlayerNames => ({
       ...oldPlayerNames,
@@ -97,8 +118,8 @@ function App() {
     <main>
       <div id="game-container">
         <ol id="players" className="highlight-player">
-          <Player initialName="Player 1" symbol="X" isActive={activePlayer === 'X'} onNameChange={handlePlayerNameChange}/>
-          <Player initialName="Player 2" symbol="O" isActive={activePlayer === 'O'} onNameChange={handlePlayerNameChange}/>
+          <Player initialName={PLAYERS.X} symbol="X" isActive={activePlayer === 'X'} onNameChange={handlePlayerNameChange}/>
+          <Player initialName={PLAYERS.O} symbol="O" isActive={activePlayer === 'O'} onNameChange={handlePlayerNameChange}/>
         </ol>
         {(winner || hasDraw) && <GameOver winner={winner} onRestart={handleRestart}/>}
         <GameBoard onSelectSquare={handleSelectSquare} board={gameBoard}/>
